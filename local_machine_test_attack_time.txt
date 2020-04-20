@@ -1,0 +1,4 @@
+DQN_nontanh_hdfs_DeepLog_GAMMA_0.85_batchSz_256_EPSdecay_2000_layers_4_hiddenSz_128_num_epoch_10000_targetUpdate_150
++ TP: 0.18158759981211836
++ #mod (per buffer): 1.5773602630342884 +/- 2.8955764487796243
++ time (single attack) : 0.0006501806113794765 +/- 0.0019883579960969767 s
