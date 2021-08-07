@@ -20,7 +20,7 @@ import LAM as attack_model
 #       Parameters
 #--------------------------------------------------------
 
-model_name = 'DQN_NONBTS_nontanh_'
+model_name = 'exp1_'
 dataset_name = 'hdfs_DeepLog_'
 debug_flag_on = False
 writer_flag_on = False

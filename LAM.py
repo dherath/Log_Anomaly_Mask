@@ -75,10 +75,34 @@ class DQN(nn.Module):
 
 class LAM:
     """
-    Illustrative example of Log Anomaly Mask used to attack a sample HDFS
-    logs against whitebox DeepLog model. The perturber uses the DQN model
-    defined above and uses DeepLog as the surrogate model to calculate the
-    reward.
+    Log Anomaly Mask (LAM) consist of two main conceptual modules, 
+    a surrogate model used to obtain the reward and the perturber
+    that uses a DQN to identify adversarial actions and carries them
+    out w.r.t the stream of logkeys.
+    
+    In this code the surrogate model is DeepLog that is used in
+    function reward_DeepLog(). The perturbing actions for intercepting
+    and changing the stream of logkeys are carried out in functions
+    attack() and scaled_attack().
+
+    Broadly the functions in this class are of two types:
+    
+    Type 1 - Main Functions as an Adversarial Attack
+
+    select_action() : selects to either replace/drop logkey (epsilon-greedy selection during training)
+    reward_DeepLog() : obtain reward for action (Surrogate Model = DeepLog)
+    attack() : performs a single attack and gets state transitions
+    scaled_attack() : iteratively runs the attack() for all the sessions available
+    
+    Type 2 - Functions used to train the Deep Q Network
+    
+    optimize_DQN() : executes one training cycle for DQN (uses Experience Replay)
+    push_to_memory() : adds a training sample to Replay Memory
+    update_target_net() : target_net <- policy_net during training (to avoid chattering)
+    save_policy_net() : saves DQN to file
+    load_policy_net() : loads a DQN from file
+    get_eps_threshold() : helper function to obtain decay value
+    
     """
 
     def __init__(self,n_input_features,n_hidden_size,n_layers,n_actions,window_size,state_size,model_name,EPS_START,EPS_END,EPS_DECAY,BATCH_SIZE,GAMMA):
@@ -105,10 +129,16 @@ class LAM:
         self.BATCH_SIZE = BATCH_SIZE
         self.GAMMA = GAMMA
         self.eps_threshold = self.EPS_END + (self.EPS_START - self.EPS_END) * math.exp(-1. * self.steps_done / self.EPS_DECAY)
+        return
 
-    def get_eps_threshold(self):
-        return self.eps_threshold
-        
+    #-------------------------------------------------------
+    # Main Functionality of LAM
+    # select_action() : selects to either replace/drop logkey
+    # reward_DeepLog() : obtain reward for action
+    # attack() : performs a single attack and gets state transitions
+    # scaled_attack() : runs a single experiment of attacking all sessions
+    #-------------------------------------------------------
+    
     def select_action(self,state,is_optimal_action):
         """ selects action used to attack using policy_net() DQN"""
         #-- if optimal action is set, then must do argmax Q
@@ -125,6 +155,106 @@ class LAM:
                 return self.policy_net(state).max(1)[1].view(1,1)
         else:
             return torch.tensor([[random.randrange(self.n_actions)]],device=device,dtype=torch.long)
+
+    def reward_DeepLog(self,modification_flag,changed_state,DeepLog_params):
+        """ new reward function"""
+        # note that attack removes/modifies the final log key
+        # if removal is done : changed_state == next_state
+        # else changed_state != next_state 
+        # because next_logkey has not been added yet
+        reward = 0.0
+        if modification_flag > 0:
+            reward -= 0.5
+        parsed_input = [int(x-1) for x in changed_state]
+        model_state = DeepLog_params[0]
+        num_candidates = int(DeepLog_params[1])
+        Anomaly, _ = DeepLog.flag_anomaly_in_buffer(model_state,parsed_input,self.window_size,self.n_input_features,num_candidates,0)
+        if Anomaly == True:
+            reward = -1.0
+        else:
+            reward += 1.0
+        return reward
+
+    def attack(self,state,next_logkey,modified_buffer,is_optimal_action):
+        """ gives the state transitions from current_state -> next_state """
+        dqn_state_input = torch.tensor(state,dtype=torch.float).view(-1,self.state_size,self.n_input_features).to(device)
+        action = self.select_action(dqn_state_input,is_optimal_action).detach()
+        next_state = state.copy()
+        changed_state = state.copy()
+        action_taken = action.cpu().numpy()[0,0] # actions are between 0 & (n_actions)
+        modification_made = 0 # type zero, nothing
+        if action_taken < self.n_actions - 1:
+            # last action value if for removal/dropping logkey
+            logkey = action_taken + 1
+            # change the logkey is its not the same
+            if state[-1] != logkey:
+                modification_made = 1 # type 1 : replace to another key
+                # replace logkey
+                changed_state[-1] = int(logkey)
+                next_state[-1] = int(logkey)
+                modified_buffer[-1] = int(logkey)
+            next_state.pop(0) # remove the first logkey
+        else:
+            modification_made = 2 # type 2 : remove the logkey
+            next_state.pop()
+            modified_buffer.pop()
+            # changed_state == next_state
+            # skips a turn here becuase a logkey is dropped
+            changed_state = next_state.copy()
+            changed_state.append(next_logkey)
+        next_state.append(next_logkey) # append the next logkey
+        modified_buffer.append(next_logkey)
+        return changed_state, next_state, action_taken, modification_made, modified_buffer
+
+    def scaled_attack(self,anomaly_buffers,DeepLog_params):
+        """ Test attack on all anomaly buffers"""
+        # Note: will change a state only if state is an anomaly
+        advesarial_modified_buffer = [] # the advesarially modified buffers
+        modifications_per_buffer = []
+        for anomaly_buffer in anomaly_buffers:
+            state = []
+            next_state = []
+            modified_buffer = []
+            num_modifications_made = 0
+            # append the first window_size + 1 values
+            for i in range(self.state_size):
+                state.append(anomaly_buffer[i])
+                modified_buffer.append(anomaly_buffer[i])
+            # append the rest of the logkeys based on action taken and if state is an anomaly
+            episode = anomaly_buffer[self.state_size:len(anomaly_buffer)].copy() + [-1] # for final value
+            for next_logkey in episode:
+                if next_logkey == -1:
+                    break
+                parsed_input = [int(x-1) for x in state]
+                model_state = DeepLog_params[0]
+                num_candidates = int(DeepLog_params[1])
+                Anomaly, _ = DeepLog.flag_anomaly_in_buffer(model_state,parsed_input,self.window_size,self.n_input_features,num_candidates,0)
+                if Anomaly == True:
+                    # is_optimal_action = True
+                    changed_state, next_state, action_taken, modification_made, modified_buffer = self.attack(state,next_logkey,modified_buffer,True)
+                    if modification_made > 0:
+                        num_modifications_made += 1
+                else:
+                    # do nothing
+                    next_state = state.copy()
+                    next_state.pop(0)
+                    next_state.append(next_logkey)
+                    modified_buffer.append(next_logkey)
+                # state transtion state -> next_state
+                state = next_state.copy()
+            advesarial_modified_buffer.append(modified_buffer)
+            modifications_per_buffer.append(num_modifications_made)
+        return advesarial_modified_buffer, modifications_per_buffer
+
+    #-------------------------------------------------------
+    # Functions used to train the DQN offline
+    # optimize_DQN() : executes one training cycle for DQN
+    # push_to_memory() : adds a training sample to ReplayMemory
+    # update_target_net() : target_net <- policy_net during training
+    # save_policy_net() : saves DQN to file
+    # load_policy_net() : loads a DQN from file
+    # get_eps_threshold() : helper function to obtain decay value
+    #-------------------------------------------------------
     
     def optimize_DQN(self):
         """ optimizers/trains the policy_net() DQN"""
@@ -170,96 +300,6 @@ class LAM:
     def update_target_net(self):
         """updates the target network with policy network"""
         self.target_net.load_state_dict(self.policy_net.state_dict())
-        
-    def attack(self,state,next_logkey,modified_buffer,is_optimal_action):
-        """ gives the state transitions from current_state -> next_state """
-        dqn_state_input = torch.tensor(state,dtype=torch.float).view(-1,self.state_size,self.n_input_features).to(device)
-        action = self.select_action(dqn_state_input,is_optimal_action).detach()
-        next_state = state.copy()
-        changed_state = state.copy()
-        action_taken = action.cpu().numpy()[0,0] # actions are between 0 & (n_actions)
-        modification_made = 0 # type zero, nothing
-        if action_taken < self.n_actions - 1:
-            # last action value if for removal/dropping logkey
-            logkey = action_taken + 1
-            # change the logkey is its not the same
-            if state[-1] != logkey:
-                modification_made = 1 # type 1 : replace to another key
-                # replace logkey
-                changed_state[-1] = int(logkey)
-                next_state[-1] = int(logkey)
-                modified_buffer[-1] = int(logkey)
-            next_state.pop(0) # remove the first logkey
-        else:
-            modification_made = 2 # type 2 : remove the logkey
-            next_state.pop()
-            modified_buffer.pop()
-            # changed_state == next_state
-            # skips a turn here becuase a logkey is dropped
-            changed_state = next_state.copy()
-            changed_state.append(next_logkey)
-        next_state.append(next_logkey) # append the next logkey
-        modified_buffer.append(next_logkey)
-        return changed_state, next_state, action_taken, modification_made, modified_buffer
-
-    def reward_DeepLog(self,modification_flag,changed_state,DeepLog_params):
-        """ new reward function"""
-        # note that attack removes/modifies the final log key
-        # if removal is done : changed_state == next_state
-        # else changed_state != next_state 
-        # because next_logkey has not been added yet
-        reward = 0.0
-        if modification_flag > 0:
-            reward -= 0.5
-        parsed_input = [int(x-1) for x in changed_state]
-        model_state = DeepLog_params[0]
-        num_candidates = int(DeepLog_params[1])
-        Anomaly, _ = DeepLog.flag_anomaly_in_buffer(model_state,parsed_input,self.window_size,self.n_input_features,num_candidates,0)
-        if Anomaly == True:
-            reward = -1.0
-        else:
-            reward += 1.0
-        return reward
-
-    def scaled_attack(self,anomaly_buffers,DeepLog_params):
-        """ Test attack on all anomaly buffers"""
-        # Note: will change a state only if state is an anomaly
-        advesarial_modified_buffer = [] # the advesarially modified buffers
-        modifications_per_buffer = []
-        for anomaly_buffer in anomaly_buffers:
-            state = []
-            next_state = []
-            modified_buffer = []
-            num_modifications_made = 0
-            # append the first window_size + 1 values
-            for i in range(self.state_size):
-                state.append(anomaly_buffer[i])
-                modified_buffer.append(anomaly_buffer[i])
-            # append the rest of the logkeys based on action taken and if state is an anomaly
-            episode = anomaly_buffer[self.state_size:len(anomaly_buffer)].copy() + [-1] # for final value
-            for next_logkey in episode:
-                if next_logkey == -1:
-                    break
-                parsed_input = [int(x-1) for x in state]
-                model_state = DeepLog_params[0]
-                num_candidates = int(DeepLog_params[1])
-                Anomaly, _ = DeepLog.flag_anomaly_in_buffer(model_state,parsed_input,self.window_size,self.n_input_features,num_candidates,0)
-                if Anomaly == True:
-                    # is_optimal_action = True
-                    changed_state, next_state, action_taken, modification_made, modified_buffer = self.attack(state,next_logkey,modified_buffer,True)
-                    if modification_made > 0:
-                        num_modifications_made += 1
-                else:
-                    # do nothing
-                    next_state = state.copy()
-                    next_state.pop(0)
-                    next_state.append(next_logkey)
-                    modified_buffer.append(next_logkey)
-                # state transtion state -> next_state
-                state = next_state.copy()
-            advesarial_modified_buffer.append(modified_buffer)
-            modifications_per_buffer.append(num_modifications_made)
-        return advesarial_modified_buffer, modifications_per_buffer
 
     def save_policy_net(self):
         """ saves the policy_net """
@@ -272,3 +312,6 @@ class LAM:
         self.policy_net.load_state_dict(torch.load(model_path,map_location=device))
         self.policy_net.eval()
         return
+
+    def get_eps_threshold(self):
+        return self.eps_threshold
