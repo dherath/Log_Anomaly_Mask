@@ -1,0 +1,18 @@
++ Predict : HDFS started
++ model_path: /home/sciflow/project_2/Log_Anomaly_Mask/model/DeepLog_batch_size=4096_epoch=100_v1.pt
+Number of sessions(data/hdfs_test_normal_reduced): 550000
+Number of sessions(data/hdfs_abnormal_test_complete_data): 10645
++ HDFS: normal started
++ HDFS: normal saved to file
++ HDFS: abnormal started
++ Predicted Results:
+TP: 0.91329%
+ FN: 0.08671%
+ FP: 0.00212%
+ TN: 0.99788%
+-------------
+Precision: 89.28276%
+ Recall: 91.32926%
+ F1-measure: 90.29442%
++ elapsed_time: 3129.2132670879364
++ done

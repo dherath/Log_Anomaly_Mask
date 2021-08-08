@@ -241,9 +241,9 @@ if __name__ == '__main__':
         FN_rate = FN / len(test_abnormal_loader)
         FP_rate = FP / len(test_normal_loader)
         TN_rate = TN / len(test_normal_loader)
-        results_scores =  'TP: {:.5f}%\n FN: {:.5f}%\n FP: {:.5f}%\n TN: {:.5f}%\n'.format(TP_rate, FN_rate, FP_rate, TN_rate)
+        results_scores =  ' TP: {:.5f}\n FN: {:.5f}\n FP: {:.5f}\n TN: {:.5f}\n'.format(TP_rate, FN_rate, FP_rate, TN_rate)
         results_scores += '-------------\n'
-        results_scores += 'Precision: {:.5f}%\n Recall: {:.5f}%\n F1-measure: {:.5f}%'.format(P, R, F1)
+        results_scores += ' Precision: {:.5f}%\n Recall: {:.5f}%\n F1-measure: {:.5f}%'.format(P, R, F1)
         #print('NOTE : for calculation ')
         print('+ Predicted Results:')
         print(results_scores)
