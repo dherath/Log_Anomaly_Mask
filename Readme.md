@@ -15,7 +15,7 @@ The code can be run by executing `run_LAM_experiments.sh`. The overal experiment
 3. Train the Perturber for LAM attack.
 4. Obtain anomaly detection results after attack.
 
-Note that the current code contains pre-trained anomaly detection models and LAM attack models which are stored in folders `models` and `rl_model` respectively. You can turn logging on\off within the code. The logs for the model training will be stored in `logs` and `rl_data` for the anomaly detetcion model and the LAM attack respectively.
+Note that the current code contains pre-trained anomaly detection models and LAM attack models which are stored in folders `models` and `rl_model` respectively. You can turn logging on\off within the code. The logs for the model training will be stored in `logs` and `rl_data` for the anomaly detection model and the LAM attack respectively.
 
 ### Results
 
