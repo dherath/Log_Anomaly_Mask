@@ -25,3 +25,12 @@ The `results` folder contains the following.
 + Anomaly detection results _before_ and _after_ LAM attack.
 + The logs modified after attack stored in `adversarially_modified_logs.txt`
 
+```
+@inproceedings{herath2021real,
+  title={Real-Time Evasion Attacks against Deep Learning-Based Anomaly Detection from Distributed System Logs},
+  author={Herath, J Dinal and Yang, Ping and Yan, Guanhua},
+  booktitle={Proceedings of the Eleventh ACM Conference on Data and Application Security and Privacy},
+  pages={29--40},
+  year={2021}
+}
+```
