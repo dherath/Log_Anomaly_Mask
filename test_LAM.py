@@ -83,7 +83,7 @@ if writer_flag_on:
 # the anomaly dataset used to train the model
 all_anomaly_buffers = ufp.read_from_file(all_data_name)
 
-# the reinforcement learning agent
+# the reinforcement learning agent of the LAM attack
 LAM = attack_model.LAM(n_input_features, n_hidden_size, n_layers, n_actions, window_size, state_size, model_name, EPS_START, EPS_END, EPS_DECAY, BATCH_SIZE, GAMMA)
 LAM.load_policy_net(model_name)
 
@@ -110,7 +110,7 @@ else:
     string_text = ''
     string_text += model_name + '\n'
     string_text += '+ True Positive rate (after attack): ' + str(TP) + '\n'
-    string_text += '+ #modifications (per session): ' + str(avg_modifications_per_buffer) + ' +/- ' + str(std_modifications_per_buffer) + '\n'
+    string_text += '+ #modifications (per session): ' + str(avg_modifications_per_buffer) + ' +/- ' + str(std_modifications_per_buffer)
     print(string_text)
 
 ufp.write_list_of_lists('results/adversarially_modified_logs.txt', advesarial_buffers)  # stores the changed adversarial buffer

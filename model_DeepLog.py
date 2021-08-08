@@ -109,12 +109,11 @@ def flag_anomaly_in_seq(model, test_seq, test_label, window_size, input_size, nu
     """
     flags if asequence is an anomaly or not
     ----
-    param model:
-    param test_seq:
-    param test_label:
-    param window_size:
-    param input_size:
-    param num_candidates:
+    param model : the DeepLog model
+    param test_buffer : the test sample
+    param window_size : m of the model
+    param input_size : 1
+    param num_candidates : the top g candidates to choose from
     ---
     return True if Anomaly else False
     """

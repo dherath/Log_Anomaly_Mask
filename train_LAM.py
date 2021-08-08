@@ -115,7 +115,9 @@ for i_episode in range(num_episodes):
         print('---')
     # --------------
     for next_logkey in future_logkeys:
+        # traverse through each new logkey and attack it
         if next_logkey == -1:
+            # seperately handle termination state
             changed_state, next_state, action_taken, modification_flag, modified_buffer = LAM.attack(state, next_logkey, modified_buffer, False)
             next_state = None
             if changed_state[-1] == -1:
@@ -142,6 +144,7 @@ for i_episode in range(num_episodes):
             sum_reward += reward
             break
         else:
+            # obtain state transition and reward
             changed_state, next_state, action_taken, modification_flag, modified_buffer = LAM.attack(state, next_logkey, modified_buffer, False)
             rest_of_episode = future_logkeys[start_index + 1:len(future_logkeys)]  # the start_index logkey is already added into the modified buffer
             reward = LAM.reward_DeepLog(modification_flag, changed_state, DeepLog_model_params)

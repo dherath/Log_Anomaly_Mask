@@ -103,6 +103,19 @@ class LAM:
     """
     
     def __init__(self, n_input_features, n_hidden_size, n_layers, n_actions, window_size, state_size, model_name, EPS_START, EPS_END, EPS_DECAY, BATCH_SIZE, GAMMA):
+        """
+        parameters:
+        n_input_features (int): the LSTM input feature dimensions
+        n_hidden_size (int): the LSTM hidden size
+        n_layers (int): the LSTM #layers
+        n_actions (int): the #actions/ output dimension of LSTM
+        window_size (int): sliding window size
+        state_size (int): dimensions of a state
+        model_name (str): the name of model to save it as
+        EPS_START, EPS_END, EPS_DECAY (float): parameters of epsilon-greedy search
+        BATCH_SIZE (int): training batch size for DQN
+        GAMMA (float): discount parameter for loss function
+        """
         # initialize a policy_network and the target_network
         self.policy_net = DQN(n_input_features, n_hidden_size, n_layers, n_actions).to(device)
         self.target_net = DQN(n_input_features, n_hidden_size, n_layers, n_actions).to(device)
