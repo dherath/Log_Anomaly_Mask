@@ -102,11 +102,7 @@ LAM.load_policy_net(model_name)
 TP = 0
 i_episode = 0
 
-advesarial_buffers, time_for_attack, modifications_per_buffer = LAM.scaled_attack(all_anomaly_buffers,DeepLog_model_params)
-
-avg_time_for_attack = np.average(time_for_attack)
-std_time_for_attack = np.std(time_for_attack)
-time_for_attack = []
+advesarial_buffers, modifications_per_buffer = LAM.scaled_attack(all_anomaly_buffers,DeepLog_model_params)
 
 avg_modifications_per_buffer = np.average(modifications_per_buffer)
 std_modifications_per_buffer = np.std(modifications_per_buffer)
@@ -125,11 +121,10 @@ if writer_flag_on:
 else:
     string_text = ''
     string_text += model_name + '\n'
-    string_text += '+ True Positive rate: ' + str(TP) + '\n'
-    string_text += '+ #modifications (per buffer): ' + str(avg_modifications_per_buffer) + ' +/- ' + str(std_modifications_per_buffer) + '\n'
-    string_text += '+ time (single attack) : '+str(avg_time_for_attack)+' +/- '+str(std_time_for_attack)+' s'
+    string_text += '+ True Positive rate (after attack): ' + str(TP) + '\n'
+    string_text += '+ #modifications (per session): ' + str(avg_modifications_per_buffer) + ' +/- ' + str(std_modifications_per_buffer) + '\n'
     print(string_text)
 
-ufp.write_list_of_lists('results/adversarial_buffer.txt', advesarial_buffers) # stores the changed adversarial buffer
+ufp.write_list_of_lists('results/adversarially_modified_logs.txt', advesarial_buffers) # stores the changed adversarial buffer
 if writer_flag_on:
     writer.close()

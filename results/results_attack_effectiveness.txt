@@ -1,0 +1,4 @@
+exp1_hdfs_DeepLog_GAMMA_0.85_batchSz_256_EPSdecay_2000_layers_4_hiddenSz_128_num_epoch_10000_targetUpdate_150
++ True Positive rate (after attack): 0.18158759981211836
++ #modifications (per session): 1.5773602630342884 +/- 2.8955764487796243
+
