@@ -33,14 +33,11 @@ if len(sys.argv) < 8:
 
 num_episodes = int(sys.argv[6])  # num iterations
 warmup_data_name = 'data/warmup_data'
-all_data_name = 'data/hdfs_abnormal_test_complete_data'
 
 DeepLog_model_ensemble = DeepLog.load_ensemble(os.getcwd() + '/model/DeepLog_batch_size=4096_epoch=100_', ['v1'], [1, 64, 2, 28, 9])
 DeepLog_hdfs = DeepLog_model_ensemble[0]
 num_candidates = 9
 DeepLog_model_params = [DeepLog_hdfs, num_candidates]
-
-training_data_name = 'data/hdfs_train'  # used to create the greedy policy
 
 # exploitation - eploration decay parameters
 BATCH_SIZE = int(sys.argv[2])  # to train per epoch
