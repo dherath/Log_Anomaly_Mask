@@ -4,7 +4,7 @@
   <img src="images/LAM_image.jpg" width="650">
 </p>
 
-This repository contains [LAM (Log Anomaly Mask)](http://www.dinalherath.com/papers/2021codaspy.pdf), a real-time evasion attack against deep learning based anomaly detection from distributed system logs. The code here contains a LAM evasion attack against [DeepLog](https://www.cs.utah.edu/~lifeifei/papers/deeplog.pdf) model for Hadoop File System (HDFS) dataset (i.e., in `data` folder). The main code of our attack is in **LAM.py**. The requirements for the experiments are in `requirements.txt`.
+This repository contains **LAM (Log Anomaly Mask)**, a real-time evasion attack against deep learning based anomaly detection from distributed system logs. Please refer to the [paper](http://www.dinalherath.com/papers/2021codaspy.pdf) for information on algorithms. The code here contains a LAM evasion attack against [DeepLog](https://www.cs.utah.edu/~lifeifei/papers/deeplog.pdf) model for Hadoop File System (HDFS) dataset (i.e., in `data` folder). The main code of our attack is in **LAM.py**. The requirements for the experiments are in `requirements.txt`.
 
 ### Running the code
 
