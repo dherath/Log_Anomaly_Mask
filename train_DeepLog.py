@@ -6,16 +6,14 @@ from torch.utils.data import TensorDataset, DataLoader
 import argparse
 import os
 
-import util_fileprocessor as fp
-#import util_bufferstream as bf
 import sys
 
 # Device configuration
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-#------------------------------------------------------
+# ------------------------------------------------------
 #              Hyperparameters
-#------------------------------------------------------
+# ------------------------------------------------------
 
 # Later will make it run from bash
 window_size = 10
@@ -25,35 +23,33 @@ num_layers = 2
 num_classes = 28
 num_epochs = 100
 batch_size = 4096
-name_flag = 'v1' # for version1, if there are other versions with same hyper-params then make it v2,v3...
+name_flag = 'v1'  # for version1, if there are other versions with same hyper-params then make it v2,v3...
 
-#------------------------------------------------------
+# ------------------------------------------------------
 #              Datset/Model-parameters
-#-----------------------------------------------------
+# -----------------------------------------------------
 
 dataset_index = 1
 stream_name = ""
 filename = "data/hdfs_train_increased"
-buffer_size = 15 # some value (must be > window_size)
+buffer_size = 15  # some value (must be > window_size)
 
 model_dir = 'model'
-log = 'DeepLog_batch_size=' + str(batch_size) + '_epoch=' + str(num_epochs) +'_'+str(name_flag)
+log = 'DeepLog_batch_size=' + str(batch_size) + '_epoch=' + str(num_epochs) + '_' + str(name_flag)
 
 # generating the buffer stream dataset ---------------
 
 buffer_Stream = []
 if dataset_index == 1:
     print('HDFS dataset: Buffer == Blocks')
-   # _ , buffer_stream = bf.bufferStreamHDFS(filename,buffer_size,window_size)
-   # stream_name = "HDFS"
 elif dataset_index == 0:
     print("BUFFER-STREAM: incorrect data index")
     sys.exit(0)
 
 
-#-----------------------------------------------------
+# -----------------------------------------------------
 #             Helper-functions
-#-----------------------------------------------------
+# -----------------------------------------------------
 
 def generate(name):
     num_sessions = 0
@@ -71,33 +67,10 @@ def generate(name):
     dataset = TensorDataset(torch.tensor(inputs, dtype=torch.float), torch.tensor(outputs))
     return dataset
 
-
-#def generateHDFS(buffer_stream_,stream_name):
-#    """
-#    helper function to generate [inputs,labels] Tensor from the buffer stream
-#    @param buffer_Stream_ : the dataset seperated into buffer/batches
-#    @return a TensorDataset 
-#    """
-#    num_sessions = 0
-#    inputs = []
-#    outputs = []
-#    for line in buffer_stream_:
-#        num_sessions += 1
-#        #print(line)
-#        line = tuple(map(lambda n: n, map(int, line)))
-#        #print(line)
-#        #sys.exit(0)
-#        for i in range(len(line) - window_size):
-#            inputs.append(line[i:i + window_size])
-#            outputs.append(line[i + window_size])
-#    print('Number of sessions({}): {}'.format(stream_name, num_sessions))
-#    print('Number of seqs({}): {}'.format(stream_name, len(inputs)))
-#    dataset = TensorDataset(torch.tensor(inputs, dtype=torch.float), torch.tensor(outputs))
-#    return dataset
-
-#------------------------------------------------------
+# ------------------------------------------------------
 #               Model
-#------------------------------------------------------
+# ------------------------------------------------------
+
 
 class Model(nn.Module):
     def __init__(self, input_size, hidden_size, num_layers, num_keys):
@@ -115,9 +88,9 @@ class Model(nn.Module):
         return out
 
 
-#------------------------------------------------------
+# ------------------------------------------------------
 # Code execution
-#------------------------------------------------------
+# ------------------------------------------------------
 
 if __name__ == '__main__':
 
@@ -136,7 +109,7 @@ if __name__ == '__main__':
     dataloader = DataLoader(seq_dataset, batch_size=batch_size, shuffle=True, pin_memory=True)
     writer = SummaryWriter(logdir='log/' + log)
 
-    #------------------------------------------------
+    # ------------------------------------------------
     # Loss and optimizer
     criterion = nn.CrossEntropyLoss()
     optimizer = optim.Adam(model.parameters())
