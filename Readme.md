@@ -20,6 +20,6 @@ Note that the current code contains pre-trained anomaly detection models and LAM
 The `results` folder contains the following.
 
 + A trace for training LAM attack.
-+ anomaly detection results __before__ and __after__ LAM attack.
++ anomaly detection results _before_ and _after_ LAM attack.
 + the logs modified after attack stored in `adversarially_modified_logs.txt`
 
