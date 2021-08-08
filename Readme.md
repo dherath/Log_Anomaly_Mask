@@ -8,7 +8,7 @@ This repository contains **LAM (Log Anomaly Mask)**, a real-time evasion attack 
 
 ### Running the code
 
-The code can be run by executing `run_LAM_experiments.sh`. The overal experiments have four steps.
+The code can be run by executing `run_LAM_experiments.sh`. The overall experiments have four steps.
 
 1. Train the deep learning based anomaly detection model (e.g., DeepLog)
 2. Obtain anomaly detection results before attack.
